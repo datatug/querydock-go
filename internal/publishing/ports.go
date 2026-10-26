@@ -32,7 +32,7 @@ type IDSource interface{ NewID() (string, error) }
 // Write carries server-derived authority and a detached, recomputed snapshot.
 // The storage adapter MUST check ownership, tombstones, expected revision,
 // idempotency (owner/key/body) and quotas atomically, before any durable write.
-// Task 1 defines this port; no durable or volatile production adapter exists yet.
+// The partial revision adapter remains unwired until quotas and deletion land.
 type Write struct {
 	OwnerUID         string
 	ID               string

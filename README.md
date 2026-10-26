@@ -1,15 +1,15 @@
 # querydock-go
 
 QueryDock.run's publishing API stores complete, immutable fiddle snapshots. It
-never executes SQL. This batch implements publishing Plan Task 1 only.
+never executes SQL. The current batch implements publishing Plan Tasks 1–2.
 
-The deployable command **refuses startup** while production Firebase identity
-and atomic DALgo storage adapters are absent. It has no memory-store fallback,
-self-issued identities, anonymous-write mode, cloud writes or deployment setup.
-Tasks 2–3 must wire verified non-anonymous Firebase identities, ownership,
-idempotency, revision comparison, root-policy-protected durable storage, quotas
-and tombstones before production can serve. Register the `querydock` extension
-in the owning approved root policy before durable writes; do not bypass it.
+The deployable command **refuses startup** until Task 3 transactional quotas and
+complete deletion accounting, plus Task 6's matching private Firestore rule
+deployment, are verified. Firebase and revision libraries are deliberately not
+wired to the production executable yet. There is no memory-store fallback,
+self-issued identity, emulator production mode, cloud write or deployment setup.
+The mandatory owning Core root policy registers `querydock`; no local policy
+copy, override or unregistered root is used.
 
 ## HTTP boundary
 
@@ -31,9 +31,15 @@ preserved as opaque text. Responses expose stable error codes, never internal
 errors, tokens, SQL or owner identifiers. Public responses are `no-store,
 must-revalidate`; the later edge integration must also bypass caching.
 
-Storage ports document the atomic ownership/idempotency/quota obligations.
-Injected fake ports in tests prove the HTTP boundary, not production transaction
-or Firebase behavior. Create/append return `{id,revision,digest,canonicalUrl}`;
+Storage ports document their atomic authorization/accounting obligations.
+`internal/revisions` implements owner-checked create/append, immutable history,
+expected-revision comparison and idempotency in Core-protected DALgo transactions.
+Create candidate IDs and timestamps stay fixed across transaction retries; create
+fingerprints exclude the candidate ID and timestamp. Idempotency ledger keys hash
+length-framed owner UID/key values, so path-unsafe Firebase UIDs never become path
+segments. Fingerprints bind owner, operation, target, expected revision and every
+canonical snapshot byte. Existing tombstones fence append and old receipt replay.
+Public reads, deletion and quota enforcement remain unavailable until Task 3. Create/append return `{id,revision,digest,canonicalUrl}`;
 the canonical URL pins `https://querydock.run/sql/{id}/{revision}`. Quota errors
 use `error.code=quota_exceeded`, a stable `error.limit` and retry seconds plus
 `Retry-After`. Other stable codes are defined alongside handlers.
@@ -66,7 +72,7 @@ fails even when a percentage display would round to 100.0%.
 
 CI pins the same strongo/cicd reusable workflow and Go 1.27.3 as the inspected
 DataTug Cloud `main`, with `min_test_coverage_percent: 100`, `coverpkg: ./...` and
-version bumping disabled. This public standard-library-only module needs no
+version bumping disabled. This public module uses published Firebase/DALgo/Core dependencies and needs no
 private dependency credentials. CI builds the static Linux artifact and the
 nonroot distroless container; it does not push an image or deploy it.
 
@@ -78,3 +84,48 @@ docker build --platform linux/amd64 -t querydock-go:local .
 The binary's expected current result is a nonzero configuration failure until
 real adapters are implemented. A built image does not establish deployed or
 account-backed publishing acceptance.
+
+## Verified identity and storage prerequisites
+
+`internal/identity.NewProduction` accepts only the explicit DataTug project and
+audience `sneat-eur3-1`. The Firebase Admin SDK verifies signatures, issuer,
+audience and timestamps, then checks revoked tokens and disabled/deleted users.
+Anonymous providers do not gain write authority. Both construction and each
+verification reject emulator environment variables. SDK failures are redacted;
+account lookup/infrastructure failures fail closed.
+
+The later runtime needs a **dedicated service account** with
+`firebaseauth.users.get` for `VerifyIDTokenAndCheckRevoked` plus only the Firestore
+data permissions required by the approved storage operations. Do not reuse a
+shared administrator or Stripe service account. IAM grants and deployment are
+outside this batch. The private `querydock` Firestore client exclusions must be
+verified live before durable production writes; merging the source rules alone
+does not satisfy that gate.
+
+Pinned SDKs: Firebase Admin 4.22.0, Firestore 1.26.0, DALgo 0.95.3 and
+DALgo Firestore 0.10.40. Core 0.72.0 resolves merged commit
+`cc8893075fe41046a363f435ccf094abb9f972d9`; the embedded registry SHA-256 is
+`dbf50f47c7e29251cc016e431e9d0d55e4be3e50f7b53fd42ddf2f110aefd781`.
+Every store constructor applies `firestorepolicy.ProtectRootCollections` and
+preserves any existing policy restrictions.
+
+Unit tests exercise the actual SDK's RSA signature, audience/issuer/expiry,
+revocation and disabled-account checks through owned in-process HTTP responses.
+They also inject transaction/commit failures and callback retries with rollback
+assertions. Separate real Auth/Firestore emulator journeys prove SDK paths,
+concurrent expected-revision conflicts, concurrent identical/changed-body
+idempotency, candidate-ID collisions, immutable source bytes and owner fences.
+These are demo-project receipts, not production IAM/auth-domain/rules acceptance.
+
+CI installs the locked Firebase CLI 15.22.4 and runs the same isolated harness:
+
+```sh
+npm ci --prefix .github/tools/emulators --ignore-scripts --no-audit --no-fund
+python3 scripts/sdk-emulators.py --firebase-js .github/tools/emulators/node_modules/firebase-tools/lib/bin/firebase.js --logs /tmp/querydock-sdk-receipts
+```
+
+Java 21, Node 24 and Go must be on PATH. The harness chooses its own loopback
+ports, uses only a `demo-querydock-*` project, records process ownership and
+teardown, and verifies its listeners are released. It never attaches to another
+emulator or deploys rules. Direct client access is denied in its temporary rules;
+Admin SDK transaction tests do not establish the separately gated live rules.
