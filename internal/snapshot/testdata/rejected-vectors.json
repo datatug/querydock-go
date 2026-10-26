@@ -1,0 +1,34 @@
+[
+  {
+    "name": "duplicate-root",
+    "source": "{\"format\":\"querydock-fiddle/1\",\"language\":\"sql\",\"language\":\"sql\",\"engine\":\"sqlite\",\"engineVersion\":\"3.54.1\",\"title\":\"Harbour calls\",\"schemaSql\":\"CREATE TABLE vessels (id INTEGER PRIMARY KEY, name TEXT);\\n\",\"seed\":{\"format\":\"sql\",\"sql\":\"INSERT INTO vessels VALUES (1, 'Aurora');\\n\"},\"queries\":[{\"id\":\"vessels\",\"name\":\"Vessels\",\"sql\":\"SELECT * FROM vessels WHERE id >= :minimum;\",\"parameters\":{\"minimum\":{\"type\":\"number\",\"value\":0},\"label\":{\"type\":\"string\",\"value\":\"O'Brien; -- 🚢\"},\"enabled\":{\"type\":\"boolean\",\"value\":true},\"empty\":{\"type\":\"null\",\"value\":null}}},{\"id\":\"count\",\"name\":\"Count\",\"sql\":\"SELECT COUNT(*) AS total FROM vessels;\",\"parameters\":{}}],\"activeQueryId\":\"count\"}"
+  },
+  {
+    "name": "duplicate-escaped",
+    "source": "{\"a\":1,\"\\u0061\":2}"
+  },
+  {
+    "name": "lone-high-surrogate",
+    "source": "\"\\ud800\""
+  },
+  {
+    "name": "lone-low-surrogate",
+    "source": "\"\\udc00\""
+  },
+  {
+    "name": "non-finite-number",
+    "source": "1e400"
+  },
+  {
+    "name": "leading-zero",
+    "source": "01"
+  },
+  {
+    "name": "forbidden-results",
+    "source": "{\"format\":\"querydock-fiddle/1\",\"language\":\"sql\",\"engine\":\"sqlite\",\"engineVersion\":\"3.54.1\",\"title\":\"Harbour calls\",\"schemaSql\":\"CREATE TABLE vessels (id INTEGER PRIMARY KEY, name TEXT);\\n\",\"seed\":{\"format\":\"sql\",\"sql\":\"INSERT INTO vessels VALUES (1, 'Aurora');\\n\"},\"queries\":[{\"id\":\"vessels\",\"name\":\"Vessels\",\"sql\":\"SELECT * FROM vessels WHERE id >= :minimum;\",\"parameters\":{\"minimum\":{\"type\":\"number\",\"value\":0},\"label\":{\"type\":\"string\",\"value\":\"O'Brien; -- 🚢\"},\"enabled\":{\"type\":\"boolean\",\"value\":true},\"empty\":{\"type\":\"null\",\"value\":null}}},{\"id\":\"count\",\"name\":\"Count\",\"sql\":\"SELECT COUNT(*) AS total FROM vessels;\",\"parameters\":{}}],\"activeQueryId\":\"count\",\"results\":[]}"
+  },
+  {
+    "name": "forbidden-connection",
+    "source": "{\"format\":\"querydock-fiddle/1\",\"language\":\"sql\",\"engine\":\"sqlite\",\"engineVersion\":\"3.54.1\",\"title\":\"Harbour calls\",\"schemaSql\":\"CREATE TABLE vessels (id INTEGER PRIMARY KEY, name TEXT);\\n\",\"seed\":{\"format\":\"sql\",\"sql\":\"INSERT INTO vessels VALUES (1, 'Aurora');\\n\"},\"queries\":[{\"id\":\"vessels\",\"name\":\"Vessels\",\"sql\":\"SELECT * FROM vessels WHERE id >= :minimum;\",\"parameters\":{\"minimum\":{\"type\":\"number\",\"value\":0},\"label\":{\"type\":\"string\",\"value\":\"O'Brien; -- 🚢\"},\"enabled\":{\"type\":\"boolean\",\"value\":true},\"empty\":{\"type\":\"null\",\"value\":null}}},{\"id\":\"count\",\"name\":\"Count\",\"sql\":\"SELECT COUNT(*) AS total FROM vessels;\",\"parameters\":{}}],\"activeQueryId\":\"count\",\"connection\":{\"password\":\"secret\"}}"
+  }
+]

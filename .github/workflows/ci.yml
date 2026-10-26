@@ -1,0 +1,40 @@
+name: Go CI
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'integration/**']
+  pull_request:
+    branches: ['**']
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+# Required by the reusable workflow's static permission declaration, even with
+# version bumping disabled. This public module needs no private credentials.
+permissions:
+  contents: write
+  actions: read
+  pull-requests: read
+jobs:
+  foundation:
+    uses: strongo/cicd/.github/workflows/workflow.yml@686765a7cb84ca84c3cef799f960c730663c182b # v1.22.0
+    secrets:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    with:
+      go_version: '1.27.3'
+      min_test_coverage_percent: 100
+      coverpkg: './...'
+      disable-version-bumping: true
+      # The reusable workflow runs all tests with repository-wide coverage and
+      # rejects every unhit merged block; its 100% setting cannot round misses away.
+      # It also executes the negative gate test in internal/coveragegate.
+      build_command: |
+        CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags='-s -w' -o bin/querydock-go ./cmd/querydock-go
+        sha256sum bin/querydock-go > bin/querydock-go.sha256
+        printf '%s\n' "${GITHUB_SHA}" > bin/querydock-go.source-sha
+        docker build --platform linux/amd64 --tag "querydock-go:${GITHUB_SHA}" .
+      artifact_name: querydock-go-linux-amd64
+      artifact_path: |
+        bin/querydock-go
+        bin/querydock-go.sha256
+        bin/querydock-go.source-sha
+      artifact_on_main_only: false
