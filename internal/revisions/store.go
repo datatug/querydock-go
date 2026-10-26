@@ -1,5 +1,5 @@
 // Package revisions implements immutable, owner-checked DALgo transactions.
-// Production remains gated until Task 3 adds transactional quotas and deletion.
+// Production remains gated until the separately verified live deployment.
 package revisions
 
 import (
@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 var validID = regexp.MustCompile(`^[A-Za-z0-9_-]{16,128}$`)
@@ -35,11 +36,16 @@ func New(db dal.DB) (*Store, error) {
 }
 
 type fiddle struct {
-	OwnerUID  string    `firestore:"ownerUid"`
-	Latest    int64     `firestore:"latest"`
-	Deleted   bool      `firestore:"deleted"`
-	CreatedAt time.Time `firestore:"createdAt"`
-	UpdatedAt time.Time `firestore:"updatedAt"`
+	OwnerUID       string    `firestore:"ownerUid"`
+	Latest         int64     `firestore:"latest"`
+	Deleted        bool      `firestore:"deleted"`
+	CreatedAt      time.Time `firestore:"createdAt"`
+	UpdatedAt      time.Time `firestore:"updatedAt"`
+	Bytes          int64     `firestore:"bytes"`
+	DeleteRevision int64     `firestore:"deleteRevision"`
+	DeleteBytes    int64     `firestore:"deleteBytes"`
+	CleanupNext    int64     `firestore:"cleanupNext"`
+	CleanupDone    bool      `firestore:"cleanupDone"`
 }
 type revision struct {
 	Number    int64     `firestore:"revision"`
@@ -85,7 +91,7 @@ func get(ctx context.Context, tx dal.Getter, r record.Record) (bool, error) {
 	return r.Exists(), nil
 }
 func validWrite(w publishing.Write, appendRevision bool) bool {
-	if w.OwnerUID == "" || !validID.MatchString(w.ID) || !validKey.MatchString(w.IdempotencyKey) || appendRevision != (w.ExpectedRevision > 0) || w.ExpectedRevision >= math.MaxInt64 {
+	if w.OwnerUID == "" || len(w.OwnerUID) > 128 || !utf8.ValidString(w.OwnerUID) || w.At.IsZero() || !validID.MatchString(w.ID) || !validKey.MatchString(w.IdempotencyKey) || appendRevision != (w.ExpectedRevision > 0) || w.ExpectedRevision >= math.MaxInt64 {
 		return false
 	}
 	validated, err := snapshot.Import([]byte(w.Snapshot.JSON))
@@ -159,6 +165,9 @@ func (s *Store) write(ctx context.Context, w publishing.Write, appendRevision bo
 			if state.Latest < 1 || uint64(state.Latest) != w.ExpectedRevision {
 				return publishing.ErrConflict
 			}
+			if state.Latest >= MaxRevisions {
+				return &publishing.LimitError{Code: LimitRevisions, Action: "fork_fiddle"}
+			}
 			next = state.Latest + 1
 		} else {
 			if exists {
@@ -175,6 +184,19 @@ func (s *Store) write(ctx context.Context, w publishing.Write, appendRevision bo
 		if exists {
 			return publishing.ErrConflict
 		}
+		counters := usage{}
+		countersRecord := record.NewRecordWithData(usageKey(w.OwnerUID), &counters)
+		found, err := get(ctx, tx, countersRecord)
+		if err != nil {
+			return err
+		}
+		if !found {
+			counters = usage{OwnerUID: w.OwnerUID}
+		}
+		if err := charge(&counters, state, w, appendRevision); err != nil {
+			return err
+		}
+		state.Bytes += int64(len(w.Snapshot.JSON))
 		state.Latest, state.UpdatedAt = next, w.At
 		saved = ledger{OwnerUID: w.OwnerUID, Fingerprint: fingerprint, ID: w.ID, Revision: next, Digest: w.Snapshot.Digest}
 		if appendRevision {
@@ -191,6 +213,9 @@ func (s *Store) write(ctx context.Context, w publishing.Write, appendRevision bo
 		if err = tx.Insert(ctx, savedRecord); err != nil {
 			return err
 		}
+		if err = tx.Set(ctx, countersRecord); err != nil {
+			return err
+		}
 		receipt = makeReceipt(w.ID, next, w.Snapshot.Digest)
 		return nil
 	})
@@ -205,10 +230,3 @@ func (s *Store) write(ctx context.Context, w publishing.Write, appendRevision bo
 func makeReceipt(id string, revision int64, digest string) publishing.Receipt {
 	return publishing.Receipt{ID: id, Revision: uint64(revision), Digest: digest, CanonicalURL: "https://querydock.run/sql/" + id + "/" + strconv.FormatInt(revision, 10)}
 }
-
-// Public reads, quotas and tombstone deletion are Task 3; a partial adapter
-// must not expose these surfaces as implemented.
-func (s *Store) Read(context.Context, string, uint64) (publishing.PublicRevision, error) {
-	return publishing.PublicRevision{}, publishing.ErrUnavailable
-}
-func (s *Store) Delete(context.Context, publishing.Delete) error { return publishing.ErrUnavailable }

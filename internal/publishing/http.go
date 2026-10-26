@@ -31,6 +31,7 @@ type errorBody struct {
 type errorDetail struct {
 	Code              string `json:"code"`
 	Limit             string `json:"limit,omitempty"`
+	Action            string `json:"action,omitempty"`
 	RetryAfterSeconds uint64 `json:"retryAfterSeconds,omitempty"`
 }
 
@@ -184,6 +185,10 @@ func (b boundary) write(w http.ResponseWriter, r *http.Request, appendRevision b
 }
 
 func (b boundary) read(w http.ResponseWriter, r *http.Request) {
+	// Public GET/HEAD is deliberately credentialless; mutations and preflight
+	// responses never receive this grant.
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Del("Access-Control-Allow-Credentials")
 	id := r.PathValue("id")
 	if !idPattern.MatchString(id) {
 		fail(w, 404, "not_found")
@@ -235,6 +240,11 @@ func (b boundary) delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := b.deps.Store.Delete(r.Context(), Delete{OwnerUID: identity.UID, ID: id, At: b.deps.Clock.Now()}); err != nil {
+		if errors.Is(err, ErrUnavailable) {
+			w.Header().Set("Retry-After", "1")
+			respond(w, 503, errorBody{errorDetail{Code: "cleanup_pending", Action: "retry_delete", RetryAfterSeconds: 1}})
+			return
+		}
 		storeError(w, err)
 		return
 	}
@@ -245,8 +255,12 @@ func storeError(w http.ResponseWriter, err error) {
 	var limit *LimitError
 	switch {
 	case errors.As(err, &limit):
-		w.Header().Set("Retry-After", strconv.FormatUint(limit.RetryAfterSeconds, 10))
-		respond(w, 429, errorBody{errorDetail{Code: "quota_exceeded", Limit: limit.Code, RetryAfterSeconds: limit.RetryAfterSeconds}})
+		if limit.RetryAfterSeconds > 0 {
+			w.Header().Set("Retry-After", strconv.FormatUint(limit.RetryAfterSeconds, 10))
+		} else {
+			w.Header().Del("Retry-After")
+		}
+		respond(w, 429, errorBody{errorDetail{Code: "quota_exceeded", Limit: limit.Code, Action: limit.Action, RetryAfterSeconds: limit.RetryAfterSeconds}})
 	case errors.Is(err, ErrForbidden):
 		fail(w, 403, "forbidden")
 	case errors.Is(err, ErrNotFound):

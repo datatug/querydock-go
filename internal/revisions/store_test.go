@@ -23,13 +23,17 @@ const otherID = "zyxwvutsrqponmlkjihgfeA"
 // callbacks/commits cannot leak writes. Real Firestore races are tested separately.
 type fakeDB struct {
 	dal.DB
-	mu                sync.Mutex
-	data              map[string][]byte
-	runs, attempts    int
-	faultOp           string
-	faultAt           int
-	runErr, commitErr error
-	replay            bool
+	mu                       sync.Mutex
+	data                     map[string][]byte
+	runs, attempts           int
+	readRuns                 int
+	failRunAt, afterCommitAt int
+	afterCommitErr           error
+	dropCommit               bool
+	faultOp                  string
+	faultAt                  int
+	runErr, commitErr        error
+	replay                   bool
 }
 type fakeTx struct {
 	dal.ReadwriteTransaction
@@ -49,7 +53,10 @@ func (d *fakeDB) RunReadwriteTransaction(ctx context.Context, f dal.RWTxWorker, 
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.runs++
-	if d.runErr != nil {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if d.runErr != nil && (d.failRunAt == 0 || d.runs == d.failRunAt) {
 		return d.runErr
 	}
 	attempts := 1
@@ -66,9 +73,31 @@ func (d *fakeDB) RunReadwriteTransaction(ctx context.Context, f dal.RWTxWorker, 
 			if d.commitErr != nil {
 				return d.commitErr
 			}
-			d.data = tx.data
+			if !d.dropCommit {
+				d.data = tx.data
+			}
+			if d.afterCommitErr != nil && d.runs == d.afterCommitAt {
+				return d.afterCommitErr
+			}
 		}
 	}
+	return nil
+}
+
+func (d *fakeDB) RunReadonlyTransaction(ctx context.Context, f dal.ROTxWorker, _ ...dal.TransactionOption) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.readRuns++
+	if d.runErr != nil {
+		return d.runErr
+	}
+	return f(ctx, &fakeTx{data: cloneData(d.data), db: d, counts: map[string]int{}})
+}
+func (tx *fakeTx) Delete(_ context.Context, key *record.Key) error {
+	if err := tx.fault("delete"); err != nil {
+		return err
+	}
+	delete(tx.data, key.String())
 	return nil
 }
 
@@ -175,7 +204,7 @@ func TestCreateAppendAndIdempotentReceipts(t *testing.T) {
 	if err != nil || receipt.ID != firstID || receipt.Revision != 1 || receipt.Digest != w.Snapshot.Digest || receipt.CanonicalURL != "https://querydock.run/sql/"+firstID+"/1" {
 		t.Fatalf("create %+v %v", receipt, err)
 	}
-	if len(db.data) != 3 {
+	if len(db.data) != 4 {
 		t.Fatal("create wasn't one three-record publication")
 	}
 	original := string(db.data[revisionKey(firstID, 1).String()])
@@ -194,7 +223,7 @@ func TestCreateAppendAndIdempotentReceipts(t *testing.T) {
 	retry.ID = otherID
 	retry.At = retry.At.Add(time.Hour)
 	again, err := s.Create(context.Background(), retry)
-	if err != nil || again != receipt || len(db.data) != 3 {
+	if err != nil || again != receipt || len(db.data) != 4 {
 		t.Fatalf("create retry changed identity/history %+v %v", again, err)
 	}
 	appendWrite := w
@@ -206,7 +235,7 @@ func TestCreateAppendAndIdempotentReceipts(t *testing.T) {
 	if err != nil || second.Revision != 2 || second.Digest != appendWrite.Snapshot.Digest {
 		t.Fatalf("append %+v %v", second, err)
 	}
-	if len(db.data) != 5 || string(db.data[revisionKey(firstID, 1).String()]) != original {
+	if len(db.data) != 6 || string(db.data[revisionKey(firstID, 1).String()]) != original {
 		t.Fatal("append overwrote prior revision")
 	}
 	state = load[fiddle](t, db, fiddleKey(firstID))
@@ -220,7 +249,7 @@ func TestCreateAppendAndIdempotentReceipts(t *testing.T) {
 		t.Fatal(err)
 	}
 	again, err = s.Append(context.Background(), appendWrite)
-	if err != nil || again != second || len(db.data) != 7 {
+	if err != nil || again != second || len(db.data) != 8 {
 		t.Fatalf("retry after a newer revision failed %+v %v", again, err)
 	}
 }
@@ -465,15 +494,19 @@ func TestTransactionFailuresAndRetries(t *testing.T) {
 	s, db, w := setup(t)
 	db.replay = true
 	receipt, err := s.Create(context.Background(), w)
-	if err != nil || db.attempts != 2 || len(db.data) != 3 || receipt.ID != w.ID {
+	if err != nil || db.attempts != 2 || len(db.data) != 4 || receipt.ID != w.ID {
 		t.Fatalf("callback replay %+v %v attempts%d", receipt, err, db.attempts)
 	}
-	if _, err := s.Read(context.Background(), w.ID, 1); !errors.Is(err, publishing.ErrUnavailable) {
-		t.Fatal("Task3 read enabled prematurely")
+	if result, err := s.Read(context.Background(), w.ID, 1); err != nil || result.Snapshot != w.Snapshot {
+		t.Fatalf("public snapshot %+v %v", result, err)
 	}
-	if err := s.Delete(context.Background(), publishing.Delete{OwnerUID: w.OwnerUID, ID: w.ID}); !errors.Is(err, publishing.ErrUnavailable) {
-		t.Fatal("Task3 delete enabled prematurely")
+	if err := s.Delete(context.Background(), publishing.Delete{OwnerUID: w.OwnerUID, ID: w.ID, At: w.At}); err != nil {
+		t.Fatal(err)
 	}
+	if _, err := s.Read(context.Background(), w.ID, 1); !errors.Is(err, publishing.ErrNotFound) {
+		t.Fatal("deleted read remained available")
+	}
+
 }
 func TestConcurrentUnitWrites(t *testing.T) {
 	s, db, w := setup(t)
@@ -504,7 +537,7 @@ func TestConcurrentUnitWrites(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if ok != 1 || conflict != 1 || load[fiddle](t, db, fiddleKey(w.ID)).Latest != 2 || len(db.data) != 5 {
+	if ok != 1 || conflict != 1 || load[fiddle](t, db, fiddleKey(w.ID)).Latest != 2 || len(db.data) != 6 {
 		t.Fatal("race overwrote history")
 	}
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/datatug/querydock-go/internal/publishing"
 )
 
-// Production refuses startup until transactional quotas/tombstones (Task 3) and
-// the matching private Firestore rule deployment (Task 6) are verified.
+// Production remains disabled until Task 6 verifies live private Firestore
+// rules and explicitly wires the reviewed identity and bounded storage adapters.
 // There is no development-token, emulator or unbounded memory-store fallback.
 func Production() (http.Handler, error) { return nil, publishing.ErrUnavailable }

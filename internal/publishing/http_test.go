@@ -369,3 +369,48 @@ func TestRuntimePorts(t *testing.T) {
 		t.Fatal("clock isn't current UTC")
 	}
 }
+
+func TestPublicCORSMutationIsolationAndRetryGuidance(t *testing.T) {
+	d, db, m := setup(t)
+	h := Handler(d)
+	for _, path := range []string{"/api/querydock/fiddles/" + fiddleID, "/api/querydock/fiddles/" + fiddleID + "/revisions/1", "/api/querydock/fiddles/reserved"} {
+		w := request(h, "GET", path, "", "", "")
+		if w.Header().Get("Access-Control-Allow-Origin") != "*" || w.Header().Get("Access-Control-Allow-Credentials") != "" {
+			t.Fatal("credentialless public CORS missing or credentials allowed")
+		}
+		if strings.Contains(w.Body.String(), "ownerUid") {
+			t.Fatal("owner metadata leaked")
+		}
+	}
+	for _, method := range []string{"POST", "DELETE", "OPTIONS"} {
+		path := "/api/querydock/fiddles"
+		if method == "DELETE" {
+			path += "/" + fiddleID
+		}
+		r := httptest.NewRequest(method, path, strings.NewReader(body(t, m)))
+		r.Header.Set("Origin", "https://datatug.app")
+		r.Header.Set("Authorization", "Bearer verified")
+		r.Header.Set("Content-Type", "application/json")
+		if method == "OPTIONS" {
+			r.Header.Set("Access-Control-Request-Method", "POST")
+			r.Header.Set("Access-Control-Request-Headers", "authorization,content-type")
+		}
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		if w.Header().Get("Access-Control-Allow-Origin") != "" || w.Header().Get("Access-Control-Allow-Credentials") != "" {
+			t.Fatal("mutation/preflight inherited public CORS")
+		}
+	}
+	db.err = &LimitError{Code: "retained_snapshot_bytes", Action: "delete_fiddle"}
+	w := request(h, "POST", "/api/querydock/fiddles", body(t, m), "Bearer verified", "application/json")
+	expect(t, w, 429, "quota_exceeded")
+	if w.Header().Get("Retry-After") != "" || !strings.Contains(w.Body.String(), `"action":"delete_fiddle"`) {
+		t.Fatal("storage bound didn't provide actionable non-temporal guidance")
+	}
+	db.err = ErrUnavailable
+	w = request(h, "DELETE", "/api/querydock/fiddles/"+fiddleID, "", "Bearer verified", "")
+	expect(t, w, 503, "cleanup_pending")
+	if w.Header().Get("Retry-After") != "1" || !strings.Contains(w.Body.String(), `"action":"retry_delete"`) {
+		t.Fatal("pending cleanup lost owner retry guidance")
+	}
+}

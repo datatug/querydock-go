@@ -70,6 +70,7 @@ type Store interface {
 // adapters use the approved limits; the HTTP boundary never counts locally.
 type LimitError struct {
 	Code              string
+	Action            string
 	RetryAfterSeconds uint64
 }
 

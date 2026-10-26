@@ -105,7 +105,7 @@ def main():
     root = Path(__file__).resolve().parents[1]
     cli = args.firebase_js.resolve()
     args.logs.mkdir(parents=True, exist_ok=True)
-    owner = {"owner": "QueryDock Task 2 SDK tests", "owner_pid": os.getpid(),
+    owner = {"owner": "QueryDock SDK integration tests", "owner_pid": os.getpid(),
              "project": "demo-querydock-task2", "teardown": "SIGTERM owned subprocess process group, then wait; SIGKILL only on timeout"}
     receipt = args.logs / "owner.json"
     receipt.write_text(json.dumps(owner, indent=2) + "\n")
@@ -138,7 +138,7 @@ def main():
                     "QUERYDOCK_TEST_PROJECT": owner["project"], "GCLOUD_PROJECT": owner["project"], "GOOGLE_CLOUD_PROJECT": owner["project"]})
         # Paths are repository-controlled and shell-quoted for emulators:exec.
         import shlex
-        tests = "cd " + shlex.quote(str(root)) + " && go test -race -count=1 -run 'Test(Firebase|Firestore)Emulator$' ./internal/identity ./internal/revisions"
+        tests = "cd " + shlex.quote(str(root)) + " && go test -race -count=1 -run 'Test(Firebase|Firestore).*Emulator$' ./internal/identity ./internal/revisions"
         command = ["node", str(cli), "emulators:exec", "--only", "auth,firestore", "--project", owner["project"], "--config", str(config_path), tests]
         with (args.logs / "journey.log").open("w") as log:
             result = run_owned(command, scratch, env, log, receipt, owner)
