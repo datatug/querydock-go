@@ -16,7 +16,7 @@ permissions:
   pull-requests: read
 jobs:
   foundation:
-    uses: strongo/cicd/.github/workflows/workflow.yml@686765a7cb84ca84c3cef799f960c730663c182b # v1.22.0
+    uses: strongo/cicd/.github/workflows/workflow.yml@e9d8156d4d20c4faef7b7b5f01ba3c3c10ba5abc # v1.24.0
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     with:
@@ -48,16 +48,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.27.3'
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24.22.1'
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '25'
+          check-latest: true
       - name: Prove emulator ownership survives SIGTERM and timeout
         run: python3 -m unittest discover -s scripts -p test_sdk_emulators.py -v
       - name: Verify immutable artifact promotion guards
