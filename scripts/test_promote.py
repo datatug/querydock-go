@@ -114,10 +114,10 @@ class PromotionTests(unittest.TestCase):
             p.verify_archive(raw, self.artifact, self.sha, Path(temp) / "image")
 
     def service(self):
-        return {"name": p.SERVICE, "etag": "etag", "latestReadyRevision": "previous", "latestCreatedRevision": "previous",
+        return {"name": p.SERVICE, "etag": "etag", "latestReadyRevision": p.SERVICE + "/revisions/querydock-go-previous", "latestCreatedRevision": p.SERVICE + "/revisions/querydock-go-previous",
                 "terminalCondition": {"state": "CONDITION_SUCCEEDED"},
-                "trafficStatuses": [{"revision": "previous", "percent": 100}], "template": {
-            "revision": "previous", "serviceAccount": p.RUNTIME,
+                "trafficStatuses": [{"revision": "querydock-go-previous", "percent": 100}], "template": {
+            "revision": "querydock-go-previous", "serviceAccount": p.RUNTIME,
             "containers": [{"image": "previous@sha256:" + "a" * 64, "env": [{"name": "EXISTING", "value": "keep"}]}]}}
 
     def test_existing_service_update_only_and_receipt_checks(self):
@@ -133,7 +133,7 @@ class PromotionTests(unittest.TestCase):
         revision = p.SERVICE + "/revisions/" + body["template"]["revision"]
         ready = {"template": body["template"], "latestReadyRevision": revision, "latestCreatedRevision": revision,
                  "observedGeneration": "2", "generation": "2", "terminalCondition": {"state": "CONDITION_SUCCEEDED"},
-                 "trafficStatuses": [{"revision": revision, "percent": 100}], "uri": "https://querydock-go-example.run.app"}
+                 "trafficStatuses": [{"revision": body["template"]["revision"], "percent": 100}], "uri": "https://querydock-go-example.run.app"}
         self.assertEqual(p.verify_service(ready, body), (revision, ready["uri"]))
         for key, value in (("latestReadyRevision", "old"), ("latestCreatedRevision", "old"),
                            ("observedGeneration", "1"), ("terminalCondition", {"state": "CONDITION_FAILED"}),
@@ -141,6 +141,11 @@ class PromotionTests(unittest.TestCase):
             invalid = copy.deepcopy(ready)
             invalid[key] = value
             with self.subTest(key=key), self.assertRaises(ValueError):
+                p.verify_service(invalid, body)
+        for wrong_target in (revision, "querydock-go-older", "other-service-previous", ""):
+            invalid = copy.deepcopy(ready)
+            invalid["trafficStatuses"][0]["revision"] = wrong_target
+            with self.subTest(wrong_target=wrong_target), self.assertRaises(ValueError):
                 p.verify_service(invalid, body)
         invalid = copy.deepcopy(ready)
         invalid["template"]["containers"][0]["image"] = "tag:mutable"
@@ -151,6 +156,12 @@ class PromotionTests(unittest.TestCase):
             invalid = self.service()
             invalid["trafficStatuses"] = traffic
             with self.subTest(previous_traffic=traffic), self.assertRaises(ValueError):
+                p.deployment_body(invalid, "sha256:" + "c" * 64, self.sha, 42)
+        for invalid_revision in ("previous", p.SERVICE + "/revisions/", "projects/other/locations/europe-west1/services/querydock-go/revisions/querydock-go-previous", p.SERVICE + "/revisions/other-service-previous"):
+            invalid = self.service()
+            invalid["latestReadyRevision"] = invalid_revision
+            invalid["latestCreatedRevision"] = invalid_revision
+            with self.subTest(invalid_revision=invalid_revision), self.assertRaises(ValueError):
                 p.deployment_body(invalid, "sha256:" + "c" * 64, self.sha, 42)
         for key in ("name", "etag"):
             invalid = self.service()
@@ -176,7 +187,7 @@ class PromotionTests(unittest.TestCase):
             revision = p.SERVICE + "/revisions/" + body["template"]["revision"]
             ready = {"template": body["template"], "latestReadyRevision": revision, "latestCreatedRevision": revision,
                      "observedGeneration": "2", "generation": "2", "terminalCondition": {"state": "CONDITION_SUCCEEDED"},
-                     "trafficStatuses": [{"revision": revision, "percent": 100}], "uri": "https://querydock-go-example.run.app"}
+                     "trafficStatuses": [{"revision": body["template"]["revision"], "percent": 100}], "uri": "https://querydock-go-example.run.app"}
             calls = []
             def process(args, **kwargs):
                 calls.append((args, kwargs))
@@ -192,7 +203,7 @@ class PromotionTests(unittest.TestCase):
             receipt = json.loads((work / "receipt.json").read_text())
             self.assertEqual(receipt["image"], p.IMAGE + "@" + digest)
             self.assertEqual(receipt["revision"], revision)
-            self.assertEqual(receipt["rollback_predecessor"], {"revision": "previous", "image": before["template"]["containers"][0]["image"]})
+            self.assertEqual(receipt["rollback_predecessor"], {"revision": before["latestReadyRevision"], "image": before["template"]["containers"][0]["image"]})
             self.assertEqual(cloud.call_args_list[1].args[0], p.SERVICE + "?updateMask=template,traffic")
             self.assertEqual(cloud.call_args_list[1].args[3], "PATCH")
             self.assertEqual(calls[0][1]["input"], b"test-token")

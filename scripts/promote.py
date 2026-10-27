@@ -142,15 +142,25 @@ def cloud(path, token, data=None, method=None):
     return json.loads(request("https://run.googleapis.com/v2/" + path, token, data, method))
 
 
+def revision_id(name):
+    prefix = SERVICE + "/revisions/"
+    require(isinstance(name, str) and name.startswith(prefix), "foreign revision resource")
+    short = name[len(prefix):]
+    require(len(short) <= 63 and re.fullmatch(r"querydock-go-[a-z0-9]+(?:-[a-z0-9]+)*", short),
+            "invalid revision identifier")
+    return short
+
+
 def deployment_body(before, digest, source, run_id):
     require(DIGEST.fullmatch(digest) and SHA.fullmatch(source) and type(run_id) is int and run_id > 0, "invalid deployment provenance")
     require(before.get("name") == SERVICE and before.get("etag"), "existing service required")
     require(not before.get("reconciling") and before.get("latestReadyRevision")
             and before.get("latestReadyRevision") == before.get("latestCreatedRevision")
             and before.get("terminalCondition", {}).get("state") == "CONDITION_SUCCEEDED", "existing service must be stable")
+    ready_id = revision_id(before["latestReadyRevision"])
     traffic = before.get("trafficStatuses", [])
     require(len(traffic) == 1 and traffic[0].get("percent") == 100
-            and traffic[0].get("revision") == before["latestReadyRevision"],
+            and traffic[0].get("revision") == ready_id,
             "existing traffic must fully target the ready revision")
     template = json.loads(json.dumps(before["template"]))
     require(len(template.get("containers", [])) == 1, "expected one runtime container")
@@ -170,6 +180,7 @@ def deployment_body(before, digest, source, run_id):
 
 def verify_service(service, body):
     expected = SERVICE + "/revisions/" + body["template"]["revision"]
+    expected_id = revision_id(expected)
     require(service.get("latestReadyRevision") == expected and service.get("latestCreatedRevision") == expected
             and str(service.get("observedGeneration")) == str(service.get("generation"))
             and service.get("terminalCondition", {}).get("state") == "CONDITION_SUCCEEDED",
@@ -179,7 +190,7 @@ def verify_service(service, body):
             and template.get("labels", {}).get("querydock-source") == body["template"]["labels"]["querydock-source"]
             and template.get("serviceAccount") == RUNTIME, "deployed identity/image/source mismatch")
     traffic = service.get("trafficStatuses", [])
-    require(len(traffic) == 1 and traffic[0].get("revision") == expected and traffic[0].get("percent") == 100,
+    require(len(traffic) == 1 and traffic[0].get("revision") == expected_id and traffic[0].get("percent") == 100,
             "traffic not fully promoted")
     uri = urllib.parse.urlsplit(service.get("uri", ""))
     require(uri.scheme == "https" and uri.hostname and uri.hostname.endswith(".run.app")
