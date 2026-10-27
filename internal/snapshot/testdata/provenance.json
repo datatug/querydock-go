@@ -1,0 +1,13 @@
+{
+  "repository": "https://github.com/datatug/datatug-apps",
+  "commit": "2220f62c091488ffa229cbd787550d2c063984fa",
+  "path": "libs/querydock/src/lib",
+  "sha256": {
+    "snapshot.ts": "1a2655a6ed43edf7190f525bd03bc3447ce73d4879931df02e0561c2f277a4e3",
+    "snapshot-codec.ts": "813a3e65c48be38e74010972ae0940d582229d4d54684d91121713077ce29ab1",
+    "strict-json.ts": "4a044366efcc1d12c38acf756d9cb2a90e46304c69dd113b4735941ee2d3d894",
+    "fixtures/jcs-vectors.json": "5ab0d7dc6fa886a6df49345a607172dbc752fd6fd52cf3426088072a6ea2dd0b",
+    "fixtures/rejected-vectors.json": "752322c1b49929db406afd63ed1668a6012db50c6412d794420ffa66c71ffcd3",
+    "fixtures/snapshot-vectors.json": "c6c277f995fab907f2ee01484221e566a6e7ad765c2d5b74091c4358eca1a9ea"
+  }
+}

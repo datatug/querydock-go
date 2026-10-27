@@ -1,0 +1,68 @@
+name: Go CI
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'integration/**']
+  pull_request:
+    branches: ['**']
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+# Required by the reusable workflow's static permission declaration, even with
+# version bumping disabled. This public module needs no private credentials.
+permissions:
+  contents: write
+  actions: read
+  pull-requests: read
+jobs:
+  foundation:
+    uses: strongo/cicd/.github/workflows/workflow.yml@686765a7cb84ca84c3cef799f960c730663c182b # v1.22.0
+    secrets:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    with:
+      go_version: '1.27.3'
+      min_test_coverage_percent: 100
+      coverpkg: './...'
+      disable-version-bumping: true
+      # The reusable workflow runs all tests with repository-wide coverage and
+      # rejects every unhit merged block; its 100% setting cannot round misses away.
+      # It also executes the negative gate test in internal/coveragegate.
+      build_command: |
+        CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags='-s -w' -o bin/querydock-go ./cmd/querydock-go
+        sha256sum bin/querydock-go > bin/querydock-go.sha256
+        printf '%s\n' "${GITHUB_SHA}" > bin/querydock-go.source-sha
+        docker build --platform linux/amd64 --tag "querydock-go:${GITHUB_SHA}" .
+      artifact_name: querydock-go-linux-amd64
+      artifact_path: |
+        bin/querydock-go
+        bin/querydock-go.sha256
+        bin/querydock-go.source-sha
+      artifact_on_main_only: false
+  sdk_emulators:
+    name: Firebase SDK and Firestore transaction journeys
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.27.3'
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24.20.0'
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Prove emulator ownership survives SIGTERM and timeout
+        run: python3 -m unittest discover -s scripts -p test_sdk_emulators.py -v
+      - name: Verify immutable artifact promotion guards
+        run: python3 -m unittest discover -s scripts -p test_promote.py -v
+      - name: Install locked emulator tooling
+        run: npm ci --prefix .github/tools/emulators --ignore-scripts --no-audit --no-fund
+      - name: Verify real SDK authentication and transaction races in an owned demo
+        run: python3 scripts/sdk-emulators.py --firebase-js .github/tools/emulators/node_modules/firebase-tools/lib/bin/firebase.js --logs "${RUNNER_TEMP}/querydock-sdk-emulators"

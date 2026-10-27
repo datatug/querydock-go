@@ -1,0 +1,60 @@
+name: Promote verified Go CI artifact
+on:
+  workflow_dispatch:
+    inputs:
+      ci_run_id:
+        description: Successful canonical-main Go CI run ID
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: querydock-production-promotion
+  cancel-in-progress: false
+jobs:
+  promote:
+    if: github.ref == 'refs/heads/main' && github.repository_id == '1434555650' && github.repository_owner_id == '61551712' && vars.QUERYDOCK_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test promotion verifier
+        run: python3 -m unittest discover -s scripts -p test_promote.py -v
+      - name: Verify whole-green main run and immutable artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CI_RUN_ID: ${{ inputs.ci_run_id }}
+        run: python3 scripts/promote.py prepare --run-id "$CI_RUN_ID" --work "$RUNNER_TEMP/querydock-promotion"
+      - id: auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          workload_identity_provider: projects/588648831063/locations/global/workloadIdentityPools/querydock-github/providers/querydock-go
+          service_account: querydock-deployer@sneat-eur3-1.iam.gserviceaccount.com
+          project_id: sneat-eur3-1
+          token_format: access_token
+          create_credentials_file: false
+          export_environment_variables: false
+      - name: Promote verified binary and check exact ready revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GOOGLE_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          DOCKER_CONFIG: ${{ runner.temp }}/querydock-docker
+        run: |
+          trap 'rm -rf "$DOCKER_CONFIG"' EXIT
+          python3 scripts/promote.py deploy --work "$RUNNER_TEMP/querydock-promotion"
+      - name: Record promotion receipt or attempted rollback predecessor
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/querydock-promotion/receipt.json" ]; then
+            cat "$RUNNER_TEMP/querydock-promotion/receipt.json" >> "$GITHUB_STEP_SUMMARY"
+          elif [ -f "$RUNNER_TEMP/querydock-promotion/attempt.json" ]; then
+            printf '%s\n' 'Promotion did not complete; recorded attempt follows.' >> "$GITHUB_STEP_SUMMARY"
+            cat "$RUNNER_TEMP/querydock-promotion/attempt.json" >> "$GITHUB_STEP_SUMMARY"
+          fi

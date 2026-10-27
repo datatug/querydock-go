@@ -1,0 +1,166 @@
+[
+  {
+    "name": "two-queries-typed-parameters",
+    "snapshot": {
+      "format": "querydock-fiddle/1",
+      "language": "sql",
+      "engine": "sqlite",
+      "engineVersion": "3.54.1",
+      "title": "Harbour calls",
+      "schemaSql": "CREATE TABLE vessels (id INTEGER PRIMARY KEY, name TEXT);\n",
+      "seed": {
+        "format": "sql",
+        "sql": "INSERT INTO vessels VALUES (1, 'Aurora');\n"
+      },
+      "queries": [
+        {
+          "id": "vessels",
+          "name": "Vessels",
+          "sql": "SELECT * FROM vessels WHERE id >= :minimum;",
+          "parameters": {
+            "minimum": {
+              "type": "number",
+              "value": 0
+            },
+            "label": {
+              "type": "string",
+              "value": "O'Brien; -- 🚢"
+            },
+            "enabled": {
+              "type": "boolean",
+              "value": true
+            },
+            "empty": {
+              "type": "null",
+              "value": null
+            }
+          }
+        },
+        {
+          "id": "count",
+          "name": "Count",
+          "sql": "SELECT COUNT(*) AS total FROM vessels;",
+          "parameters": {}
+        }
+      ],
+      "activeQueryId": "count"
+    },
+    "canonical": "{\"activeQueryId\":\"count\",\"engine\":\"sqlite\",\"engineVersion\":\"3.54.1\",\"format\":\"querydock-fiddle/1\",\"language\":\"sql\",\"queries\":[{\"id\":\"vessels\",\"name\":\"Vessels\",\"parameters\":{\"empty\":{\"type\":\"null\",\"value\":null},\"enabled\":{\"type\":\"boolean\",\"value\":true},\"label\":{\"type\":\"string\",\"value\":\"O'Brien; -- 🚢\"},\"minimum\":{\"type\":\"number\",\"value\":0}},\"sql\":\"SELECT * FROM vessels WHERE id >= :minimum;\"},{\"id\":\"count\",\"name\":\"Count\",\"parameters\":{},\"sql\":\"SELECT COUNT(*) AS total FROM vessels;\"}],\"schemaSql\":\"CREATE TABLE vessels (id INTEGER PRIMARY KEY, name TEXT);\\n\",\"seed\":{\"format\":\"sql\",\"sql\":\"INSERT INTO vessels VALUES (1, 'Aurora');\\n\"},\"title\":\"Harbour calls\"}",
+    "sha256": "20081c96500ef4a42105ef56440d9a9ca007b28c09db20cd543e47f697523aa7",
+    "source": "{\"activeQueryId\":\"count\",\"engine\":\"sqlite\",\"engineVersion\":\"3.54.1\",\"format\":\"querydock-fiddle/1\",\"language\":\"sql\",\"queries\":[{\"id\":\"vessels\",\"name\":\"Vessels\",\"parameters\":{\"empty\":{\"type\":\"null\",\"value\":null},\"enabled\":{\"type\":\"boolean\",\"value\":true},\"label\":{\"type\":\"string\",\"value\":\"O'Brien; -- 🚢\"},\"minimum\":{\"type\":\"number\",\"value\":-0}},\"sql\":\"SELECT * FROM vessels WHERE id >= :minimum;\"},{\"id\":\"count\",\"name\":\"Count\",\"parameters\":{},\"sql\":\"SELECT COUNT(*) AS total FROM vessels;\"}],\"schemaSql\":\"CREATE TABLE vessels (id INTEGER PRIMARY KEY, name TEXT);\\n\",\"seed\":{\"format\":\"sql\",\"sql\":\"INSERT INTO vessels VALUES (1, 'Aurora');\\n\"},\"title\":\"Harbour calls\"}"
+  },
+  {
+    "name": "json-table-seed",
+    "snapshot": {
+      "format": "querydock-fiddle/1",
+      "language": "sql",
+      "engine": "sqlite",
+      "engineVersion": "3.54.1",
+      "title": "Harbour calls",
+      "schemaSql": "CREATE TABLE vessels (id INTEGER PRIMARY KEY, name TEXT);\n",
+      "seed": {
+        "format": "json",
+        "tables": [
+          {
+            "table": "vessels",
+            "fileName": "vessels.json",
+            "columns": ["id", "name"],
+            "content": "[{\"id\":1,\"name\":\"Aurora\"}]\n"
+          }
+        ]
+      },
+      "queries": [
+        {
+          "id": "vessels",
+          "name": "Vessels",
+          "sql": "SELECT * FROM vessels WHERE id >= :minimum;",
+          "parameters": {
+            "minimum": {
+              "type": "number",
+              "value": 0
+            },
+            "label": {
+              "type": "string",
+              "value": "O'Brien; -- 🚢"
+            },
+            "enabled": {
+              "type": "boolean",
+              "value": true
+            },
+            "empty": {
+              "type": "null",
+              "value": null
+            }
+          }
+        },
+        {
+          "id": "count",
+          "name": "Count",
+          "sql": "SELECT COUNT(*) AS total FROM vessels;",
+          "parameters": {}
+        }
+      ],
+      "activeQueryId": "count"
+    },
+    "canonical": "{\"activeQueryId\":\"count\",\"engine\":\"sqlite\",\"engineVersion\":\"3.54.1\",\"format\":\"querydock-fiddle/1\",\"language\":\"sql\",\"queries\":[{\"id\":\"vessels\",\"name\":\"Vessels\",\"parameters\":{\"empty\":{\"type\":\"null\",\"value\":null},\"enabled\":{\"type\":\"boolean\",\"value\":true},\"label\":{\"type\":\"string\",\"value\":\"O'Brien; -- 🚢\"},\"minimum\":{\"type\":\"number\",\"value\":0}},\"sql\":\"SELECT * FROM vessels WHERE id >= :minimum;\"},{\"id\":\"count\",\"name\":\"Count\",\"parameters\":{},\"sql\":\"SELECT COUNT(*) AS total FROM vessels;\"}],\"schemaSql\":\"CREATE TABLE vessels (id INTEGER PRIMARY KEY, name TEXT);\\n\",\"seed\":{\"format\":\"json\",\"tables\":[{\"columns\":[\"id\",\"name\"],\"content\":\"[{\\\"id\\\":1,\\\"name\\\":\\\"Aurora\\\"}]\\n\",\"fileName\":\"vessels.json\",\"table\":\"vessels\"}]},\"title\":\"Harbour calls\"}",
+    "sha256": "c04c00a57c50f4d1a59e725ba246995c750609565a9c5a796cb79f9d863459e6",
+    "source": "{\"activeQueryId\":\"count\",\"engine\":\"sqlite\",\"engineVersion\":\"3.54.1\",\"format\":\"querydock-fiddle/1\",\"language\":\"sql\",\"queries\":[{\"id\":\"vessels\",\"name\":\"Vessels\",\"parameters\":{\"empty\":{\"type\":\"null\",\"value\":null},\"enabled\":{\"type\":\"boolean\",\"value\":true},\"label\":{\"type\":\"string\",\"value\":\"O'Brien; -- 🚢\"},\"minimum\":{\"type\":\"number\",\"value\":-0}},\"sql\":\"SELECT * FROM vessels WHERE id >= :minimum;\"},{\"id\":\"count\",\"name\":\"Count\",\"parameters\":{},\"sql\":\"SELECT COUNT(*) AS total FROM vessels;\"}],\"schemaSql\":\"CREATE TABLE vessels (id INTEGER PRIMARY KEY, name TEXT);\\n\",\"seed\":{\"format\":\"json\",\"tables\":[{\"columns\":[\"id\",\"name\"],\"content\":\"[{\\\"id\\\":1,\\\"name\\\":\\\"Aurora\\\"}]\\n\",\"fileName\":\"vessels.json\",\"table\":\"vessels\"}]},\"title\":\"Harbour calls\"}"
+  },
+  {
+    "name": "csv-table-seed",
+    "snapshot": {
+      "format": "querydock-fiddle/1",
+      "language": "sql",
+      "engine": "sqlite",
+      "engineVersion": "3.54.1",
+      "title": "Harbour calls",
+      "schemaSql": "CREATE TABLE vessels (id INTEGER PRIMARY KEY, name TEXT);\n",
+      "seed": {
+        "format": "csv",
+        "tables": [
+          {
+            "table": "vessels",
+            "fileName": "vessels.csv",
+            "columns": ["id", "name"],
+            "content": "id,name\r\n1,\"Aurora\"\r\n"
+          }
+        ]
+      },
+      "queries": [
+        {
+          "id": "vessels",
+          "name": "Vessels",
+          "sql": "SELECT * FROM vessels WHERE id >= :minimum;",
+          "parameters": {
+            "minimum": {
+              "type": "number",
+              "value": 0
+            },
+            "label": {
+              "type": "string",
+              "value": "O'Brien; -- 🚢"
+            },
+            "enabled": {
+              "type": "boolean",
+              "value": true
+            },
+            "empty": {
+              "type": "null",
+              "value": null
+            }
+          }
+        },
+        {
+          "id": "count",
+          "name": "Count",
+          "sql": "SELECT COUNT(*) AS total FROM vessels;",
+          "parameters": {}
+        }
+      ],
+      "activeQueryId": "count"
+    },
+    "canonical": "{\"activeQueryId\":\"count\",\"engine\":\"sqlite\",\"engineVersion\":\"3.54.1\",\"format\":\"querydock-fiddle/1\",\"language\":\"sql\",\"queries\":[{\"id\":\"vessels\",\"name\":\"Vessels\",\"parameters\":{\"empty\":{\"type\":\"null\",\"value\":null},\"enabled\":{\"type\":\"boolean\",\"value\":true},\"label\":{\"type\":\"string\",\"value\":\"O'Brien; -- 🚢\"},\"minimum\":{\"type\":\"number\",\"value\":0}},\"sql\":\"SELECT * FROM vessels WHERE id >= :minimum;\"},{\"id\":\"count\",\"name\":\"Count\",\"parameters\":{},\"sql\":\"SELECT COUNT(*) AS total FROM vessels;\"}],\"schemaSql\":\"CREATE TABLE vessels (id INTEGER PRIMARY KEY, name TEXT);\\n\",\"seed\":{\"format\":\"csv\",\"tables\":[{\"columns\":[\"id\",\"name\"],\"content\":\"id,name\\r\\n1,\\\"Aurora\\\"\\r\\n\",\"fileName\":\"vessels.csv\",\"table\":\"vessels\"}]},\"title\":\"Harbour calls\"}",
+    "sha256": "385823dd7d7f6ef710f0decd90f41e84951b1d3b0da0df9c8867559b46b2031e",
+    "source": "{\"activeQueryId\":\"count\",\"engine\":\"sqlite\",\"engineVersion\":\"3.54.1\",\"format\":\"querydock-fiddle/1\",\"language\":\"sql\",\"queries\":[{\"id\":\"vessels\",\"name\":\"Vessels\",\"parameters\":{\"empty\":{\"type\":\"null\",\"value\":null},\"enabled\":{\"type\":\"boolean\",\"value\":true},\"label\":{\"type\":\"string\",\"value\":\"O'Brien; -- 🚢\"},\"minimum\":{\"type\":\"number\",\"value\":-0}},\"sql\":\"SELECT * FROM vessels WHERE id >= :minimum;\"},{\"id\":\"count\",\"name\":\"Count\",\"parameters\":{},\"sql\":\"SELECT COUNT(*) AS total FROM vessels;\"}],\"schemaSql\":\"CREATE TABLE vessels (id INTEGER PRIMARY KEY, name TEXT);\\n\",\"seed\":{\"format\":\"csv\",\"tables\":[{\"columns\":[\"id\",\"name\"],\"content\":\"id,name\\r\\n1,\\\"Aurora\\\"\\r\\n\",\"fileName\":\"vessels.csv\",\"table\":\"vessels\"}]},\"title\":\"Harbour calls\"}"
+  }
+]

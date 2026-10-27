@@ -1,0 +1,6 @@
+/coverage.out
+/profile.cov
+/bin/
+/.codegrapher/
+/.github/tools/emulators/node_modules/
+/scripts/__pycache__/
