@@ -44,7 +44,7 @@ func TestRun(t *testing.T) {
 			if code == 0 && len(reports) != 0 {
 				t.Fatal("success reported failure")
 			}
-			if tc.composeErr != nil && (!composed || served || !strings.Contains(reports[0].Error(), "not configured")) {
+			if tc.composeErr != nil && (!composed || served || !strings.Contains(reports[0].Error(), "configuration unavailable")) {
 				t.Fatal("composition failure did not stop listener")
 			}
 			if !composed && served {

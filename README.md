@@ -1,12 +1,23 @@
 # querydock-go
 
 QueryDock.run's publishing API stores complete, immutable fiddle snapshots. It
-never executes SQL. The current batch implements publishing Plan Tasks 1–3.
+never executes SQL. The runtime wires verified Firebase identities and immutable,
+Core-protected Firestore revisions through ADC.
 
-The deployable command **refuses startup** until Task 6's live private Firestore rule deployment and runtime wiring are
-verified. Firebase and revision libraries are deliberately not
-wired to the production executable yet. There is no memory-store fallback,
-self-issued identity, emulator production mode, cloud write or deployment setup.
+The command requires `QUERYDOCK_PROJECT_ID=sneat-eur3-1` and
+`QUERYDOCK_DATABASE_ID=(default)`. Missing or different values and either
+`FIREBASE_AUTH_EMULATOR_HOST` or `FIRESTORE_EMULATOR_HOST` fail before SDK
+initialization. There is no memory-store, self-issued-token or emulator fallback.
+SDK initialization has a 15-second deadline and performs no Firestore data
+operations. The runtime owns the Firestore client, closes it on partial startup
+failure and shutdown, and redacts SDK, listener and cleanup errors.
+
+`PORT` defaults to 8080 and accepts only integers in 1..65535. SIGTERM/SIGINT
+stop accepting connections and drain active requests for at most ten seconds,
+then force-close connections before SDK cleanup. `GET /readyz` returns an empty
+200 response after local wiring; it makes no provider-health or live-rules claim.
+The deployment owner must verify dedicated identity permissions, private rules
+and hosted publishing acceptance before production traffic is enabled.
 The mandatory owning Core root policy registers `querydock`; no local policy
 copy, override or unregistered root is used.
 
@@ -80,8 +91,8 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags='-s -w' -o bin
 docker build --platform linux/amd64 -t querydock-go:local .
 ```
 
-The binary's expected current result is a nonzero configuration failure until
-the separately gated production runtime is explicitly enabled. A built image does not establish deployed or
+Without the explicit production configuration and ADC, the binary exits with a
+redacted configuration failure. A built image does not establish deployed or
 account-backed publishing acceptance.
 
 ## Verified identity and storage prerequisites
@@ -93,11 +104,10 @@ Anonymous providers do not gain write authority. Both construction and each
 verification reject emulator environment variables. SDK failures are redacted;
 account lookup/infrastructure failures fail closed.
 
-The later runtime needs a **dedicated service account** with
+The production runtime needs a **dedicated service account** with
 `firebaseauth.users.get` for `VerifyIDTokenAndCheckRevoked` plus only the Firestore
 data permissions required by the approved storage operations. Do not reuse a
-shared administrator or Stripe service account. IAM grants and deployment are
-outside this batch. The private `querydock` Firestore client exclusions must be
+shared administrator or Stripe service account. IAM grants and deployment remain separately controlled. The private `querydock` Firestore client exclusions must be
 verified live before durable production writes; merging the source rules alone
 does not satisfy that gate.
 

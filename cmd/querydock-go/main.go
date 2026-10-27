@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"os"
 
 	"github.com/datatug/querydock-go/internal/command"
@@ -12,7 +11,7 @@ import (
 var (
 	getenv  = os.Getenv
 	compose = composition.Production
-	serve   = (*http.Server).ListenAndServe
+	serve   = command.Serve
 	report  = func(err error) { log.Print(err) }
 	exit    = os.Exit
 )
