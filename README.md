@@ -80,8 +80,8 @@ requires the tool's exact `100.0%` total. No source/package exclusions or rounde
 percentage exemptions exist. A negative gate test proves that one unhit branch
 fails even when a percentage display would round to 100.0%.
 
-CI pins the same strongo/cicd reusable workflow and Go 1.27.3 as the inspected
-DataTug Cloud `main`, with `min_test_coverage_percent: 100`, `coverpkg: ./...` and
+CI pins the inspected strongo/cicd reusable workflow v1.24.0 and Go 1.27.3,
+with `min_test_coverage_percent: 100`, `coverpkg: ./...` and
 version bumping disabled. This public module uses published Firebase/DALgo/Core dependencies and needs no
 private dependency credentials. CI builds the static Linux artifact and the
 nonroot distroless container; it does not push an image or deploy it.
