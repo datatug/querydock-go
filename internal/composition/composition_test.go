@@ -87,7 +87,8 @@ func TestProductionWiring(t *testing.T) {
 		t.Fatal("readiness leaked")
 	}
 	owned := h.(*ownedHandler)
-	if owned.Close() == nil || owned.Close() == nil || closed != 3 {
+	firstClose, secondClose := owned.Close(), owned.Close()
+	if firstClose == nil || secondClose == nil || closed != 3 {
 		t.Fatal("close ownership")
 	}
 }
@@ -118,7 +119,11 @@ func TestConcreteStoreWiring(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer h.(*ownedHandler).Close()
+	defer func() {
+		if err := h.(*ownedHandler).Close(); err != nil {
+			t.Errorf("close Firestore SDK: %v", err)
+		}
+	}()
 	rr := httptest.NewRecorder()
 	h.ServeHTTP(rr, httptest.NewRequest("POST", "/api/querydock/fiddles", nil))
 	if rr.Code != http.StatusUnauthorized {
