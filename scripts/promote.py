@@ -164,7 +164,7 @@ def deployment_body(before, digest, source, run_id):
             "existing traffic must fully target the ready revision")
     template = json.loads(json.dumps(before["template"]))
     require(len(template.get("containers", [])) == 1, "expected one runtime container")
-    template["revision"] = f"querydock-go-{source[:12]}-{run_id}"
+    template["revision"] = f"querydock-go-{source[:12]}-{run_id}-{digest[7:19]}"
     template["serviceAccount"] = RUNTIME
     template.setdefault("labels", {})["querydock-source"] = source
     container = template["containers"][0]
