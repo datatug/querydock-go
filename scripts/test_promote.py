@@ -174,6 +174,17 @@ class PromotionTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 p.deployment_body(invalid, "sha256:" + "c" * 64, self.sha, 42)
 
+    def test_repackaged_image_uses_a_distinct_immutable_revision(self):
+        first = p.deployment_body(self.service(), "sha256:" + "c" * 64, self.sha, 42)
+        repeated = p.deployment_body(self.service(), "sha256:" + "c" * 64, self.sha, 42)
+        repackaged = p.deployment_body(self.service(), "sha256:" + "d" * 64, self.sha, 42)
+        self.assertEqual(first["template"]["revision"], repeated["template"]["revision"])
+        self.assertNotEqual(first["template"]["revision"], repackaged["template"]["revision"])
+        self.assertEqual(first["template"]["labels"], repackaged["template"]["labels"])
+        longest = p.deployment_body(self.service(), "sha256:" + "e" * 64, self.sha, (1 << 64) - 1)
+        self.assertLessEqual(len(longest["template"]["revision"]), 63)
+        self.assertEqual(p.revision_id(p.SERVICE + "/revisions/" + longest["template"]["revision"]), longest["template"]["revision"])
+
     def test_deploy_records_exact_receipt_without_rebuild(self):
         digest = "sha256:" + "c" * 64
         with tempfile.TemporaryDirectory() as temp:
