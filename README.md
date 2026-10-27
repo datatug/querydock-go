@@ -188,3 +188,27 @@ then create the full 20 MiB as forty 512 KiB snapshots, interrupt cleanup, drop 
 confirmed finalization acknowledgement and verify all payloads are physically
 absent with exactly-once reservations and unchanged rate history. These tests do
 not enable production or establish live Firebase/domain/IAM acceptance.
+
+## Artifact promotion
+
+`.github/workflows/deploy.yml` is a manual, disabled-by-default promotion path.
+The operator supplies a successful **Go CI run ID** from current canonical `main`.
+The workflow requires repository variable `QUERYDOCK_DEPLOY_ENABLED=true` and the
+fixed repository/owner IDs. Its WIF trust is scoped to this exact workflow on
+`main`; the dedicated deployer has no service-create, IAM, rules or Auth
+configuration permissions. Initial service creation and enabling the variable
+belong to the deployment owner after prerequisite verification.
+
+The helper checks the entire run's conclusion, current main SHA and immutable
+artifact metadata, downloads by artifact ID, verifies the archive digest, accepts
+exactly three regular files, and checks source SHA plus binary checksum. It builds
+an image only from that verified binary on a pinned distroless base. It rechecks
+main immediately before updating the existing service by immutable image digest,
+sets the dedicated runtime and explicit project/database configuration, and checks
+the ready revision, source label, image, traffic and `/readyz`. The job summary
+records source/run/artifact IDs, binary checksum, image digest, ready revision and
+rollback predecessor. It does not automatically roll back failed acceptance.
+
+Promotion verifier tests run in Go CI's SDK job and before authentication in the
+promotion workflow. This source does not establish a successful hosted promotion
+or account-backed acceptance receipt.

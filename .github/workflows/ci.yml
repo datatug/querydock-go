@@ -60,6 +60,8 @@ jobs:
           java-version: '21'
       - name: Prove emulator ownership survives SIGTERM and timeout
         run: python3 -m unittest discover -s scripts -p test_sdk_emulators.py -v
+      - name: Verify immutable artifact promotion guards
+        run: python3 -m unittest discover -s scripts -p test_promote.py -v
       - name: Install locked emulator tooling
         run: npm ci --prefix .github/tools/emulators --ignore-scripts --no-audit --no-fund
       - name: Verify real SDK authentication and transaction races in an owned demo
