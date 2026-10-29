@@ -97,6 +97,8 @@ github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0t
 github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7so1lCWt35ZSgc=
 github.com/sneat-co/sneat-go-core v0.72.0 h1:vqZhM5d4xFTEylxS/bUCwBksM08IrcdXyc1XFNGTnqY=
 github.com/sneat-co/sneat-go-core v0.72.0/go.mod h1:88+0btU9/1LxkheqKPSYrq4Pr1qXDXLjivbaytNgFM4=
+github.com/sneat-co/sneat-go-core v0.73.3 h1:zY0D/Q/vXBUgEMsMKcaZDzTlH/bCeuq5ZzxN48dkth4=
+github.com/sneat-co/sneat-go-core v0.73.3/go.mod h1:jrmhT0s23CtEYd2+054X/O9YNUzQMnFOHO5kQHZUbxs=
 github.com/spiffe/go-spiffe/v2 v2.9.0 h1:g5qTg3qIP1HXV+GzuyEfSJFVxUCpEP5Ui1OINVJHPB4=
 github.com/spiffe/go-spiffe/v2 v2.9.0/go.mod h1:w2CLWKLMTX/PPYUEUPv3ltH0RXsw5S8suwNF46w9/Aw=
 github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=
