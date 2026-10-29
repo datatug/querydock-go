@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "repositories": {
+    "datatug/querydock-go": {
+      "sites": [
+        {
+          "file": "internal/composition/composition.go",
+          "import": "cloud.google.com/go/firestore",
+          "sha256": "631e17566183df9e8d0cc87f74fb702c2cc7b3988c1a89112628f7f55a9ea45f",
+          "class": "secured-factory",
+          "owner": "datatug/querydock-go",
+          "rationale": "Composition creates adapter then revisions.New unconditionally applies ProtectRootCollections and retains only secured DB.",
+          "review": "sha256:b8b9c1fe0c4c4acc98d21637cdf4bb54181ea3b6b02f609db3d80a7558dc92d3",
+          "test": "https://github.com/datatug/querydock-go/blob/b0a5e7cf515905442b0a5d84673d1909ac71f619/internal/revisions/store_test.go#L544"
+        },
+        {
+          "file": "internal/composition/composition.go",
+          "import": "github.com/dal-go/dalgo2firestore",
+          "sha256": "631e17566183df9e8d0cc87f74fb702c2cc7b3988c1a89112628f7f55a9ea45f",
+          "class": "secured-factory",
+          "owner": "datatug/querydock-go",
+          "rationale": "Composition creates adapter then revisions.New unconditionally applies ProtectRootCollections and retains only secured DB.",
+          "review": "sha256:b8b9c1fe0c4c4acc98d21637cdf4bb54181ea3b6b02f609db3d80a7558dc92d3",
+          "test": "https://github.com/datatug/querydock-go/blob/b0a5e7cf515905442b0a5d84673d1909ac71f619/internal/revisions/store_test.go#L544"
+        },
+        {
+          "file": "internal/composition/composition_test.go",
+          "import": "cloud.google.com/go/firestore",
+          "sha256": "49a2ecd15d243920e65719d0c2ad501869d924b3f0e69ca4af351ca9e5da1515",
+          "class": "test-only",
+          "owner": "datatug/querydock-go",
+          "rationale": "Test-only SDK types, fixtures or emulator operations. This classification does not claim emulator execution; file changes require manifest consistency and separate review.",
+          "review": "sha256:b8b9c1fe0c4c4acc98d21637cdf4bb54181ea3b6b02f609db3d80a7558dc92d3",
+          "test": "https://github.com/datatug/querydock-go/blob/b0a5e7cf515905442b0a5d84673d1909ac71f619/internal/composition/composition_test.go#L19"
+        },
+        {
+          "file": "internal/composition/composition_test.go",
+          "import": "github.com/dal-go/dalgo2firestore",
+          "sha256": "49a2ecd15d243920e65719d0c2ad501869d924b3f0e69ca4af351ca9e5da1515",
+          "class": "test-only",
+          "owner": "datatug/querydock-go",
+          "rationale": "Test-only SDK types, fixtures or emulator operations. This classification does not claim emulator execution; file changes require manifest consistency and separate review.",
+          "review": "sha256:b8b9c1fe0c4c4acc98d21637cdf4bb54181ea3b6b02f609db3d80a7558dc92d3",
+          "test": "https://github.com/datatug/querydock-go/blob/b0a5e7cf515905442b0a5d84673d1909ac71f619/internal/composition/composition_test.go#L19"
+        },
+        {
+          "file": "internal/identity/firebase.go",
+          "import": "firebase.google.com/go/v4",
+          "sha256": "17eccb422977382dbe8e009eff8832727fe770109e30a5afd428338e57159094",
+          "class": "read-only-native-owner",
+          "owner": "datatug/querydock-go",
+          "rationale": "newApp23->sdkClient26->appAuth24/31; current identity-only callpath, root App capability retained by filter. Non-storage import use; not a claim that Auth operations are immutable.",
+          "review": "sha256:b8b9c1fe0c4c4acc98d21637cdf4bb54181ea3b6b02f609db3d80a7558dc92d3",
+          "test": "https://github.com/datatug/querydock-go/blob/b0a5e7cf515905442b0a5d84673d1909ac71f619/internal/identity/firebase_test.go#L38"
+        },
+        {
+          "file": "internal/identity/firebase_test.go",
+          "import": "firebase.google.com/go/v4",
+          "sha256": "0bef265df465e1fa8901cc753477117735f28a71bdd2d726e76b56f5a64e70b3",
+          "class": "test-only",
+          "owner": "datatug/querydock-go",
+          "rationale": "Test-only SDK types, fixtures or emulator operations. This classification does not claim emulator execution; file changes require manifest consistency and separate review.",
+          "review": "sha256:b8b9c1fe0c4c4acc98d21637cdf4bb54181ea3b6b02f609db3d80a7558dc92d3",
+          "test": "https://github.com/datatug/querydock-go/blob/b0a5e7cf515905442b0a5d84673d1909ac71f619/internal/identity/firebase_test.go#L38"
+        },
+        {
+          "file": "internal/revisions/emulator_test.go",
+          "import": "cloud.google.com/go/firestore",
+          "sha256": "3ed33bf02fc5bcad89916e55470f6e7bb7810583fb9f013516d9b201f5336688",
+          "class": "test-only",
+          "owner": "datatug/querydock-go",
+          "rationale": "Test-only SDK types, fixtures or emulator operations. This classification does not claim emulator execution; file changes require manifest consistency and separate review.",
+          "review": "sha256:b8b9c1fe0c4c4acc98d21637cdf4bb54181ea3b6b02f609db3d80a7558dc92d3",
+          "test": "https://github.com/datatug/querydock-go/blob/b0a5e7cf515905442b0a5d84673d1909ac71f619/internal/revisions/emulator_test.go#L18"
+        },
+        {
+          "file": "internal/revisions/emulator_test.go",
+          "import": "github.com/dal-go/dalgo2firestore",
+          "sha256": "3ed33bf02fc5bcad89916e55470f6e7bb7810583fb9f013516d9b201f5336688",
+          "class": "test-only",
+          "owner": "datatug/querydock-go",
+          "rationale": "Test-only SDK types, fixtures or emulator operations. This classification does not claim emulator execution; file changes require manifest consistency and separate review.",
+          "review": "sha256:b8b9c1fe0c4c4acc98d21637cdf4bb54181ea3b6b02f609db3d80a7558dc92d3",
+          "test": "https://github.com/datatug/querydock-go/blob/b0a5e7cf515905442b0a5d84673d1909ac71f619/internal/revisions/emulator_test.go#L18"
+        },
+        {
+          "file": "internal/revisions/task3_emulator_test.go",
+          "import": "cloud.google.com/go/firestore",
+          "sha256": "1eb34a630b8cc3cf53936a78e8676b2176cc97253869ddb05f8b883b68e5d51b",
+          "class": "test-only",
+          "owner": "datatug/querydock-go",
+          "rationale": "Test-only SDK types, fixtures or emulator operations. This classification does not claim emulator execution; file changes require manifest consistency and separate review.",
+          "review": "sha256:b8b9c1fe0c4c4acc98d21637cdf4bb54181ea3b6b02f609db3d80a7558dc92d3",
+          "test": "https://github.com/datatug/querydock-go/blob/b0a5e7cf515905442b0a5d84673d1909ac71f619/internal/revisions/task3_emulator_test.go#L73"
+        },
+        {
+          "file": "internal/revisions/task3_emulator_test.go",
+          "import": "github.com/dal-go/dalgo2firestore",
+          "sha256": "1eb34a630b8cc3cf53936a78e8676b2176cc97253869ddb05f8b883b68e5d51b",
+          "class": "test-only",
+          "owner": "datatug/querydock-go",
+          "rationale": "Test-only SDK types, fixtures or emulator operations. This classification does not claim emulator execution; file changes require manifest consistency and separate review.",
+          "review": "sha256:b8b9c1fe0c4c4acc98d21637cdf4bb54181ea3b6b02f609db3d80a7558dc92d3",
+          "test": "https://github.com/datatug/querydock-go/blob/b0a5e7cf515905442b0a5d84673d1909ac71f619/internal/revisions/task3_emulator_test.go#L73"
+        }
+      ]
+    }
+  }
+}

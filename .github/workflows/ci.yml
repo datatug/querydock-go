@@ -28,6 +28,8 @@ jobs:
       # rejects every unhit merged block; its 100% setting cannot round misses away.
       # It also executes the negative gate test in internal/coveragegate.
       build_command: |
+        set -euo pipefail
+        GOWORK=off go run github.com/sneat-co/cicd/cmd/check-go-native-firestore-sites@40765b99ee6f9b1d2fefe8cee3e1a7a09934d67e --root "$(git rev-parse --show-toplevel)" --repository "$GITHUB_REPOSITORY" --manifest .ci/native-firestore-sites.json
         CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags='-s -w' -o bin/querydock-go ./cmd/querydock-go
         sha256sum bin/querydock-go > bin/querydock-go.sha256
         printf '%s\n' "${GITHUB_SHA}" > bin/querydock-go.source-sha
