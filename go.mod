@@ -8,7 +8,7 @@ require (
 	github.com/dal-go/dalgo v0.95.4
 	github.com/dal-go/dalgo2firestore v0.10.41
 	github.com/dal-go/record v0.1.5
-	github.com/sneat-co/sneat-go-core v0.72.0
+	github.com/sneat-co/sneat-go-core v0.73.3
 	google.golang.org/api v0.309.0
 )
 
