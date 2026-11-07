@@ -3,7 +3,7 @@ module github.com/datatug/querydock-go
 go 1.27.3
 
 require (
-	cloud.google.com/go/firestore v1.29.0
+	cloud.google.com/go/firestore v1.29.2
 	firebase.google.com/go/v4 v4.22.0
 	github.com/dal-go/dalgo v0.95.4
 	github.com/dal-go/dalgo2firestore v0.10.41
