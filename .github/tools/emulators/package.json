@@ -2,6 +2,6 @@
   "name": "querydock-sdk-emulator-tools",
   "private": true,
   "devDependencies": {
-    "firebase-tools": "15.22.4"
+    "firebase-tools": "15.35.0"
   }
 }

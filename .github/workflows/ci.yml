@@ -16,7 +16,7 @@ permissions:
   pull-requests: read
 jobs:
   foundation:
-    uses: strongo/cicd/.github/workflows/workflow.yml@e9d8156d4d20c4faef7b7b5f01ba3c3c10ba5abc # v1.24.0
+    uses: strongo/cicd/.github/workflows/workflow.yml@d0814eb1276ed093b4695a980a52fef043739e0b # v1.25.2
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     with:
